@@ -9,17 +9,17 @@ from langgraph.graph import StateGraph, END, START
 from langchain_openai import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
 
-# Load API keys
+# ========== ENV & LLM CONFIG ==========
 load_dotenv()
 openai_key = os.getenv("OPENAI_API_KEY")
 anthropic_key = os.getenv("ANTHROPIC_API_KEY")
 
-# LLMs
 gpt = ChatOpenAI(model="gpt-4o-mini", temperature=0.7, api_key=openai_key)
 claude = ChatAnthropic(model="claude-3-5-sonnet-20240620", temperature=0.7, api_key=anthropic_key)
 
-# DB setup
+# ========== DATABASE ==========
 DB_PATH = "memory.db"
+
 def init_db():
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
@@ -34,6 +34,7 @@ def init_db():
     """)
     conn.commit()
     conn.close()
+
 init_db()
 
 def save_message(role: str, content: str, pinned: bool = False):
@@ -46,23 +47,23 @@ def save_message(role: str, content: str, pinned: bool = False):
     conn.commit()
     conn.close()
 
-def load_recent(n: int = 5) -> List[str]:
+def load_recent(n: int = 8) -> List[str]:
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
-    cur.execute("SELECT role, content FROM memory ORDER BY id DESC LIMIT ?", (n,))
+    cur.execute("SELECT timestamp, role, content FROM memory ORDER BY id DESC LIMIT ?", (n,))
     rows = cur.fetchall()
     conn.close()
-    return [f"{r[0]}: {r[1]}" for r in reversed(rows)]
+    return [f"{r[0]} | {r[1]}: {r[2]}" for r in reversed(rows)]
 
 def load_pinned() -> List[str]:
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
-    cur.execute("SELECT role, content FROM memory WHERE pinned=1 ORDER BY id ASC")
+    cur.execute("SELECT timestamp, role, content FROM memory WHERE pinned=1 ORDER BY id ASC")
     rows = cur.fetchall()
     conn.close()
-    return [f"{r[0]}: {r[1]}" for r in rows]
+    return [f"{r[0]} | {r[1]}: {r[2]}" for r in rows]
 
-# Cognitive agents
+# ========== AGENTS ==========
 def planner_node(state: Dict[str, Any]) -> Dict[str, Any]:
     prompt = f"Planner: propose next steps.\nDialogue: {state['history'][-3:]}"
     resp = gpt.invoke(prompt)
@@ -84,31 +85,34 @@ def meta_node(state: Dict[str, Any]) -> Dict[str, Any]:
     save_message("Meta", text)
     return {"history": state["history"] + [(datetime.now().isoformat(), "Meta", text)]}
 
-# Workflow
+# ========== WORKFLOW ==========
 workflow = StateGraph(dict)
 workflow.add_node("planner", planner_node)
 workflow.add_node("critic", critic_node)
 workflow.add_node("meta", meta_node)
 
-workflow.add_edge(START, "planner")   # ENTRYPOINT ✅
+workflow.add_edge(START, "planner")   # entrypoint
 workflow.add_edge("planner", "critic")
 workflow.add_edge("critic", "meta")
 workflow.add_edge("meta", END)
 
 app = workflow.compile()
 
-# Streamlit UI
+# ========== STREAMLIT UI ==========
 st.set_page_config(page_title="Multi-Agent System with Memory", layout="wide")
-st.title("🤖 Multi-Agent System with Memory & Meta Identity")
+st.title("🤖 Multi-Agent System with Memory, Meta Identity, & Autonomy")
 
+# Session state
 if "history" not in st.session_state:
     st.session_state.history = []
 if "running" not in st.session_state:
     st.session_state.running = False
+if "meta_summary" not in st.session_state:
+    st.session_state.meta_summary = []
 
 # User input
 user_input = st.text_input("Your message:")
-col1, col2 = st.columns(2)
+col1, col2, col3 = st.columns(3)
 with col1:
     if st.button("▶️ Start"):
         if user_input.strip():
@@ -119,19 +123,44 @@ with col1:
 with col2:
     if st.button("⏹ Stop"):
         st.session_state.running = False
+with col3:
+    if st.button("📌 Pin Last"):
+        if st.session_state.history:
+            _, role, content = st.session_state.history[-1]
+            save_message(role, content, pinned=True)
+
+# Chat display
+st.subheader("Conversation")
+chat_box = st.empty()
+
+def render_history():
+    formatted = [f"{t} | {r}: {c}" for t, r, c in st.session_state.history]
+    chat_box.text("\n".join(formatted))
+
+render_history()
 
 # Run loop
+def run_cycles(n_cycles: int = 1):
+    state = {"history": st.session_state.history, "user_input": st.session_state.get("last_user_input", "")}
+    steps = max(4 * n_cycles, 4)
+    for update in app.stream(state, {"recursion_limit": steps + 2}):
+        if "history" in update:
+            st.session_state.history = update["history"]
+            render_history()
+    # capture meta-summaries
+    st.session_state.meta_summary.extend([h for h in st.session_state.history if h[1] == "Meta"])
+
 if st.session_state.running:
-    for i, step in enumerate(app.stream({"history": st.session_state.history}, {"recursion_limit": 8})):
-        if "history" in step:
-            st.session_state.history = step["history"]
-            chat_feed = "\n".join([f"{t} | {r}: {c}" for t, r, c in st.session_state.history])
-            st.text(chat_feed)
+    run_cycles(1)
     st.session_state.running = False
 
-# Sidebar: memories
+# Sidebar: memories + meta
 st.sidebar.header("📌 Memory Browser")
 st.sidebar.subheader("Pinned")
 st.sidebar.write("\n".join(load_pinned()) or "(none pinned)")
 st.sidebar.subheader("Recent")
 st.sidebar.write("\n".join(load_recent(10)))
+
+st.sidebar.header("🧠 Meta Summaries")
+meta_out = "\n".join([f"{t} | {r}: {c}" for t, r, c in st.session_state.meta_summary])
+st.sidebar.write(meta_out or "(none yet)")
