@@ -1,4 +1,4 @@
-# AI Multi-Agent Communication Framework
+# AI Multi-Agent Communication Framework v2
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub Repo](https://img.shields.io/badge/GitHub-Repo-blue.svg)](https://github.com/raustinturner/ai-multiagent)
