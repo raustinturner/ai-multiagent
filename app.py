@@ -7,7 +7,7 @@ import os
 import time
 import requests
 from bs4 import BeautifulSoup
-from duckduckgo_search import DDGS
+from ddgs import DDGS
 
 from langgraph.graph import StateGraph, END, START
 from langchain_openai import ChatOpenAI
@@ -19,7 +19,7 @@ openai_key = os.getenv("OPENAI_API_KEY")
 anthropic_key = os.getenv("ANTHROPIC_API_KEY")
 
 gpt = ChatOpenAI(model="gpt-4o-mini", temperature=0.7, api_key=openai_key)
-claude = ChatAnthropic(model="claude-3-5-sonnet-20240620", temperature=0.7, api_key=anthropic_key)
+claude = ChatAnthropic(model="claude-3-5-sonnet-20241022", temperature=0.7, api_key=anthropic_key)
 
 # ========== DATABASE FUNCTIONS ==========
 DB_PATH = "memory.db"
