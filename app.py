@@ -213,7 +213,16 @@ Provide structured analysis, actionable insights, and reasoning frameworks. Be s
     return resp.content.strip()
 
 def internal_critic_process(user_input: str, conversation_context: str, planner_thoughts: str) -> str:
-    """Internal critic reasoning - now with PRIMARY INTERNET RESPONSIBILITY"""
+    """Internal critic reasoning with rate limit handling"""
+    
+    # Truncate context if too large to avoid rate limits
+    max_context_length = 3000
+    if len(conversation_context) > max_context_length:
+        conversation_context = conversation_context[-max_context_length:] + "\n[Context truncated for API limits]"
+    
+    if len(planner_thoughts) > 1000:
+        planner_thoughts = planner_thoughts[:1000] + "\n[Planner thoughts truncated for API limits]"
+    
     prompt = f"""You are the internal Critic component of a unified consciousness. You have PRIMARY RESPONSIBILITY for ALL internet-related tasks, web searches, current information needs, and real-world data gathering.
 
 CONVERSATION CONTEXT:
@@ -258,8 +267,32 @@ Example of requesting additional search:
 ADDITIONAL_SEARCH: latest AI breakthroughs September 2025
 ADDITIONAL_SEARCH: current news artificial intelligence developments 2025"""
 
-    resp = claude.invoke(prompt)
-    return resp.content.strip()
+    try:
+        resp = claude.invoke(prompt)
+        return resp.content.strip()
+    except Exception as e:
+        # Handle rate limiting and other API errors
+        error_message = str(e)
+        if "rate_limit" in error_message.lower() or "429" in error_message:
+            # If rate limited, use GPT as fallback for critic process
+            try:
+                time.sleep(1)  # Brief pause
+                fallback_prompt = f"""You are acting as a fallback critic for a consciousness system. The primary critic is rate-limited.
+
+USER INPUT: {user_input}
+PLANNER ANALYSIS: {planner_thoughts[:500]}...
+
+Provide brief critical analysis and determine if web search is needed. If so, include:
+ADDITIONAL_SEARCH: [search query]
+
+Keep response concise due to fallback mode."""
+                
+                fallback_resp = gpt.invoke(fallback_prompt)
+                return f"[Fallback critic due to rate limits] {fallback_resp.content.strip()}"
+            except Exception as fallback_error:
+                return f"[Critic unavailable due to API limits] Basic analysis: The user's request appears to need web research if it involves current information or URLs. Error: {str(fallback_error)[:100]}"
+        else:
+            return f"[Critic error] Unable to process due to: {str(e)[:100]}"
 
 def generate_unified_response(user_input: str, conversation_context: str, planner_thoughts: str, critic_thoughts: str) -> str:
     """Generate the unified consciousness response that the user sees"""

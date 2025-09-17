@@ -22,9 +22,16 @@ import os
 from ddgs import DDGS
 import logging
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+# Configure logging to be minimal
+logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.ERROR)
+
+# Disable verbose logging from other libraries
+logging.getLogger('httpx').setLevel(logging.ERROR)
+logging.getLogger('primp').setLevel(logging.ERROR)
+logging.getLogger('urllib3').setLevel(logging.ERROR)
+logging.getLogger('requests').setLevel(logging.ERROR)
 
 @dataclass
 class WebContent:
