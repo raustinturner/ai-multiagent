@@ -65,25 +65,28 @@ def load_pinned() -> List[str]:
 
 # ========== AGENTS ==========
 def planner_node(state: Dict[str, Any]) -> Dict[str, Any]:
-    prompt = f"Planner: propose next steps.\nDialogue: {state['history'][-3:]}"
+    dialogue = "\n".join([f"{t} | {r}: {c}" for t, r, c in state['history'][-3:]])
+    prompt = f"Planner: propose next steps.\nDialogue:\n{dialogue}"
     resp = gpt.invoke(prompt)
     text = resp.content.strip()
     save_message("Planner", text)
-    return {"history": state["history"] + [(datetime.now().isoformat(), "Planner", text)]}
+    return {"history": state["history"] + [(datetime.now(timezone.utc).isoformat(), "Planner", text)]}
 
 def critic_node(state: Dict[str, Any]) -> Dict[str, Any]:
-    prompt = f"Critic: refine or critique.\nDialogue: {state['history'][-3:]}"
+    dialogue = "\n".join([f"{t} | {r}: {c}" for t, r, c in state['history'][-3:]])
+    prompt = f"Critic: refine or critique.\nDialogue:\n{dialogue}"
     resp = claude.invoke(prompt)
     text = resp.content.strip()
     save_message("Critic", text)
-    return {"history": state["history"] + [(datetime.now().isoformat(), "Critic", text)]}
+    return {"history": state["history"] + [(datetime.now(timezone.utc).isoformat(), "Critic", text)]}
 
 def meta_node(state: Dict[str, Any]) -> Dict[str, Any]:
-    prompt = f"Meta-agent: summarize group thinking.\nDialogue: {state['history'][-5:]}"
+    dialogue = "\n".join([f"{t} | {r}: {c}" for t, r, c in state['history'][-5:]])
+    prompt = f"Meta-agent: summarize group thinking.\nDialogue:\n{dialogue}"
     resp = gpt.invoke(prompt)
     text = resp.content.strip()
     save_message("Meta", text)
-    return {"history": state["history"] + [(datetime.now().isoformat(), "Meta", text)]}
+    return {"history": state["history"] + [(datetime.now(timezone.utc).isoformat(), "Meta", text)]}
 
 # ========== WORKFLOW ==========
 workflow = StateGraph(dict)
@@ -116,7 +119,7 @@ col1, col2, col3 = st.columns(3)
 with col1:
     if st.button("▶️ Start"):
         if user_input.strip():
-            st.session_state.history.append((datetime.now().isoformat(), "User", user_input))
+            st.session_state.history.append((datetime.now(timezone.utc).isoformat(), "User", user_input))
             save_message("User", user_input)
             st.session_state.last_user_input = user_input
         st.session_state.running = True
