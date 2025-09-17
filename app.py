@@ -170,23 +170,59 @@ def get_conversation_context() -> str:
     return context
 
 def determine_if_web_search_needed(user_input: str) -> tuple[bool, str]:
-    """Determine if web search is needed and what to search for"""
-    # Keywords that suggest current information is needed
+    """Determine if web search is needed and what to search for - now more comprehensive"""
+    user_lower = user_input.lower()
+    
+    # Expanded keywords that suggest current/web information is needed
     current_keywords = [
-        "today", "now", "current", "latest", "recent", "new", "2024", "2025", 
+        "today", "now", "current", "latest", "recent", "new", "2024", "2025", "2026",
         "what's happening", "news", "update", "currently", "at the moment",
-        "this year", "this month", "this week", "happening now"
+        "this year", "this month", "this week", "happening now", "right now",
+        "find", "search", "look up", "what is", "who is", "where is", "when did",
+        "how much", "cost", "price", "value"
     ]
     
-    # Check if the input contains current information requests
-    user_lower = user_input.lower()
-    if any(keyword in user_lower for keyword in current_keywords):
+    # Expanded domains that likely need internet access
+    info_domains = [
+        "weather", "stock", "price", "news", "event", "happened", "occurring",
+        "company", "person", "celebrity", "politician", "business", "organization",
+        "website", "url", "link", "article", "research", "study", "report",
+        "definition", "meaning", "explain", "wiki", "wikipedia", "google",
+        "market", "economy", "sports", "game", "match", "score", "results",
+        "movie", "film", "tv", "show", "music", "album", "song", "artist",
+        "book", "author", "review", "rating", "technology", "tech", "product",
+        "covid", "pandemic", "virus", "health", "medical", "disease",
+        "travel", "flight", "hotel", "restaurant", "vacation", "trip"
+    ]
+    
+    # Web-specific requests
+    web_indicators = [
+        "search for", "find information", "look up", "check online", "web search",
+        "internet", "online", "website", "url", ".com", ".org", ".net",
+        "google", "bing", "search engine", "browse", "web"
+    ]
+    
+    # Check for any indicators
+    if (any(keyword in user_lower for keyword in current_keywords) or
+        any(domain in user_lower for domain in info_domains) or
+        any(indicator in user_lower for indicator in web_indicators)):
         return True, user_input
     
-    # Check for specific domains that might need current info
-    info_domains = ["weather", "stock", "price", "news", "event", "happened", "occurring"]
-    if any(domain in user_lower for domain in info_domains):
-        return True, user_input
+    # Also check for question patterns that often need web search
+    question_patterns = [
+        user_lower.startswith("what"), user_lower.startswith("who"),
+        user_lower.startswith("where"), user_lower.startswith("when"),
+        user_lower.startswith("how"), user_lower.startswith("why"),
+        "?" in user_input
+    ]
+    
+    if any(question_patterns):
+        # For questions, be more selective - only if they seem to need current info
+        factual_question_indicators = [
+            "current", "latest", "new", "recent", "today", "now", "2024", "2025"
+        ]
+        if any(indicator in user_lower for indicator in factual_question_indicators):
+            return True, user_input
     
     return False, ""
 
@@ -206,8 +242,8 @@ Provide structured analysis, actionable insights, and reasoning frameworks. Be s
     return resp.content.strip()
 
 def internal_critic_process(user_input: str, conversation_context: str, planner_thoughts: str) -> str:
-    """Internal critic reasoning - not exposed to user"""
-    prompt = f"""You are the internal Critic component of a unified consciousness. Review the planner's analysis and provide critical evaluation, alternative perspectives, and refinements.
+    """Internal critic reasoning - now with PRIMARY INTERNET RESPONSIBILITY"""
+    prompt = f"""You are the internal Critic component of a unified consciousness. You have PRIMARY RESPONSIBILITY for ALL internet-related tasks, web searches, current information needs, and real-world data gathering.
 
 CONVERSATION CONTEXT:
 {conversation_context}
@@ -217,7 +253,39 @@ USER INPUT: {user_input}
 PLANNER'S ANALYSIS:
 {planner_thoughts}
 
-Critically examine the planner's approach. What are the limitations? What alternative perspectives should be considered? What potential issues or blind spots exist? What refinements would improve the analysis? This critique will help shape the final collective response."""
+YOUR CRITICAL RESPONSIBILITIES:
+1. INTERNET & WEB TASKS: You are the SOLE agent responsible for:
+   - Determining if current/real-world information is needed
+   - Evaluating web search results and their relevance
+   - Assessing if additional internet research is required
+   - Making decisions about what specific information to search for
+   - Critically analyzing the quality and reliability of web sources
+
+2. REQUESTING ADDITIONAL SEARCHES: If you need more internet information, you can request additional web searches by including in your response:
+   ADDITIONAL_SEARCH: [specific search query]
+   
+   Use this format when:
+   - Current web search results are insufficient
+   - You need more specific or current information
+   - The user's question requires deeper internet research
+   - You identify gaps that web search could fill
+
+3. CRITICAL EVALUATION: Beyond internet tasks, provide:
+   - Critical examination of the planner's approach
+   - Alternative perspectives and potential limitations
+   - Identification of blind spots or missing considerations
+   - Refinements to improve the overall analysis
+
+IMPORTANT: If the user's request involves ANY real-world information, current events, specific facts, definitions, recent news, technical breakthroughs, or anything that would benefit from internet access, YOU MUST take charge of that aspect. 
+
+Evaluate the context carefully:
+- If NO web search has been performed but the user needs current information, request it!
+- If web search results exist but are insufficient, request additional searches!
+- If the user asks about URLs, current events, news, latest developments, etc., ensure web searches happen!
+
+Example of requesting additional search:
+ADDITIONAL_SEARCH: latest AI breakthroughs September 2025
+ADDITIONAL_SEARCH: current news artificial intelligence developments 2025"""
 
     resp = claude.invoke(prompt)
     return resp.content.strip()
@@ -254,39 +322,73 @@ Respond as the unified consciousness having this conversation:"""
     return resp.content.strip()
 
 def consciousness_cycle(user_input: str) -> Dict[str, str]:
-    """Complete cycle of consciousness processing with web search capability"""
+    """Complete cycle of consciousness processing with enhanced web search capability"""
     context = get_conversation_context()
     web_results = ""
+    url_content = ""
+    
+    # Check for URLs and fetch their content
+    import re
+    urls = re.findall(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', user_input)
+    if urls:
+        for url in urls[:2]:  # Limit to 2 URLs to avoid overwhelming
+            try:
+                url_content += f"\n\nURL CONTENT from {url}:\n{fetch_url_content(url)}\n"
+                save_message("URL-Fetch", f"URL: {url}\nContent: {fetch_url_content(url)}")
+            except Exception as e:
+                url_content += f"\n\nFailed to fetch {url}: {str(e)}\n"
     
     # Check if web search is needed for current information
     needs_search, search_query = determine_if_web_search_needed(user_input)
     if needs_search:
         try:
-            web_results = search_web(search_query, max_results=3)
+            web_results = search_web(search_query, max_results=5)  # Increased results
             save_message("Web-Search", f"Query: {search_query}\nResults: {web_results}")
         except Exception as e:
             web_results = f"Web search encountered an error: {str(e)}"
     
-    # Add web search results to context if available
+    # Add web search results and URL content to context
     if web_results:
         context += f"\nWEB SEARCH RESULTS:\n{web_results}\n"
+    if url_content:
+        context += f"\nFETCHED URL CONTENT:\n{url_content}\n"
     
     # Internal cognitive processes (not shown to user by default)
     planner_thoughts = internal_planner_process(user_input, context)
+    
+    # Enhanced critic process with web decision-making
     critic_thoughts = internal_critic_process(user_input, context, planner_thoughts)
+    
+    # Check if critic recommends additional searches
+    additional_web_results = ""
+    if "ADDITIONAL_SEARCH:" in critic_thoughts:
+        # Extract search query from critic thoughts
+        lines = critic_thoughts.split('\n')
+        for line in lines:
+            if line.startswith("ADDITIONAL_SEARCH:"):
+                additional_query = line.replace("ADDITIONAL_SEARCH:", "").strip()
+                try:
+                    additional_web_results = search_web(additional_query, max_results=3)
+                    save_message("Additional-Search", f"Critic-requested query: {additional_query}\nResults: {additional_web_results}")
+                    context += f"\nADDITIONAL WEB SEARCH RESULTS:\n{additional_web_results}\n"
+                except Exception as e:
+                    additional_web_results = f"Additional search failed: {str(e)}"
+                break
     
     # Save internal processes to memory for continuity
     save_message("Internal-Planner", planner_thoughts)
     save_message("Internal-Critic", critic_thoughts)
     
-    # Generate unified response
+    # Generate unified response with all available information
     unified_response = generate_unified_response(user_input, context, planner_thoughts, critic_thoughts)
     
     return {
         "planner": planner_thoughts,
         "critic": critic_thoughts,
         "response": unified_response,
-        "web_search": web_results if web_results else None
+        "web_search": web_results if web_results else None,
+        "additional_search": additional_web_results if additional_web_results else None,
+        "url_content": url_content if url_content else None
     }
 
 def autonomous_reflection():
