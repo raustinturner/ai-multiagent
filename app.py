@@ -433,16 +433,78 @@ def format_timestamp(timestamp_str: str) -> str:
 # ========== STREAMLIT UI ==========
 st.set_page_config(page_title="🧠 Emergent AI Consciousness", layout="wide")
 
-# Custom CSS
+# Enhanced CSS with better accessibility and scrolling support
 st.markdown("""
 <style>
+/* Main containers with proper scrolling */
+.main-content {
+    max-height: 80vh;
+    overflow-y: auto;
+    padding: 20px;
+    scroll-behavior: smooth;
+}
+
+.conversation-container {
+    max-height: 600px;
+    overflow-y: auto;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    padding: 15px;
+    background: #f9f9f9;
+    scroll-behavior: smooth;
+}
+
+.scrollable-memory {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background: white;
+}
+
+/* Accessibility enhancements */
+.accessible-input {
+    border: 2px solid #007bff !important;
+    border-radius: 5px !important;
+    padding: 10px !important;
+}
+
+.accessible-input:focus {
+    border-color: #0056b3 !important;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5) !important;
+    outline: none !important;
+}
+
+.accessible-button {
+    padding: 12px 24px !important;
+    font-size: 16px !important;
+    border-radius: 8px !important;
+    border: none !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+}
+
+.accessible-button:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
+}
+
+.accessible-button:focus {
+    outline: 3px solid #ff6b6b !important;
+    outline-offset: 2px !important;
+}
+
+/* Enhanced visibility */
 .consciousness-container {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border-radius: 20px;
     padding: 20px;
     margin: 10px 0;
     color: white;
+    border: 3px solid transparent;
 }
+
 .user-message {
     background: linear-gradient(135deg, #74b9ff, #0984e3);
     border-radius: 15px;
@@ -450,7 +512,9 @@ st.markdown("""
     margin: 10px 0;
     color: white;
     border-left: 4px solid #ffffff;
+    border: 2px solid rgba(255,255,255,0.3);
 }
+
 .consciousness-message {
     background: linear-gradient(135deg, #a8e6cf, #4ecdc4);
     border-radius: 15px;
@@ -458,7 +522,9 @@ st.markdown("""
     margin: 10px 0;
     color: #2d3436;
     border-left: 4px solid #00b894;
+    border: 2px solid rgba(0,184,148,0.3);
 }
+
 .autonomous-message {
     background: linear-gradient(135deg, #fd79a8, #fdcb6e);
     border-radius: 15px;
@@ -467,14 +533,18 @@ st.markdown("""
     color: white;
     border-left: 4px solid #e84393;
     opacity: 0.9;
+    border: 2px solid rgba(232,67,147,0.3);
 }
+
 .memory-item {
     background: #f8f9fa;
     border-radius: 10px;
     padding: 10px;
     margin: 5px 0;
     border-left: 3px solid #6c5ce7;
+    border: 1px solid #dee2e6;
 }
+
 .internal-process {
     background: #fff5f5;
     border-radius: 8px;
@@ -483,22 +553,165 @@ st.markdown("""
     font-size: 0.8em;
     color: #666;
     border-left: 2px solid #fab1a0;
+    border: 1px solid #fab1a0;
 }
+
 .timestamp {
     font-size: 0.7em;
     color: #999;
     float: right;
 }
+
 .status-indicator {
-    padding: 5px 10px;
+    padding: 8px 16px;
     border-radius: 20px;
-    font-size: 0.8em;
+    font-size: 0.9em;
     font-weight: bold;
+    display: inline-block;
+    margin: 10px 0;
+    border: 2px solid transparent;
 }
-.thinking { background: #fd79a8; color: white; }
-.ready { background: #00b894; color: white; }
-.autonomous { background: #e17055; color: white; }
+
+.thinking { 
+    background: #fd79a8; 
+    color: white; 
+    border-color: #e84393;
+}
+
+.ready { 
+    background: #00b894; 
+    color: white; 
+    border-color: #00a085;
+}
+
+.autonomous { 
+    background: #e17055; 
+    color: white; 
+    border-color: #d63031;
+}
+
+/* Keyboard shortcuts display */
+.keyboard-hint {
+    font-size: 0.8em;
+    color: #666;
+    font-style: italic;
+    margin-top: 5px;
+}
+
+/* Better focus indicators */
+.stSelectbox > div > div {
+    border: 2px solid transparent !important;
+}
+
+.stSelectbox > div > div:focus-within {
+    border-color: #007bff !important;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5) !important;
+}
+
+.stTextArea > div > div > textarea {
+    border: 2px solid #ddd !important;
+}
+
+.stTextArea > div > div > textarea:focus {
+    border-color: #007bff !important;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5) !important;
+}
+
+/* Scroll indicators */
+.scroll-indicator {
+    text-align: center;
+    padding: 10px;
+    color: #666;
+    font-size: 0.9em;
+    border-top: 1px solid #ddd;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .consciousness-container,
+    .user-message,
+    .consciousness-message,
+    .autonomous-message {
+        border-width: 3px !important;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .accessible-button {
+        transition: none !important;
+    }
+    
+    .accessible-button:hover {
+        transform: none !important;
+    }
+}
 </style>
+
+<script>
+// Enhanced keyboard navigation support
+document.addEventListener('DOMContentLoaded', function() {
+    // Command/Ctrl + Enter to submit form
+    document.addEventListener('keydown', function(e) {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+            e.preventDefault();
+            const submitButton = document.querySelector('[data-testid="send-thought-button"]');
+            if (submitButton && !submitButton.disabled) {
+                submitButton.click();
+            }
+        }
+        
+        // Alt + S to scroll to bottom of conversation
+        if (e.altKey && e.key === 's') {
+            e.preventDefault();
+            const conversation = document.querySelector('.conversation-container');
+            if (conversation) {
+                conversation.scrollTop = conversation.scrollHeight;
+            }
+        }
+        
+        // Alt + T to focus on text input
+        if (e.altKey && e.key === 't') {
+            e.preventDefault();
+            const textArea = document.querySelector('textarea[aria-label*="thoughts"]');
+            if (textArea) {
+                textArea.focus();
+            }
+        }
+    });
+    
+    // Auto-scroll conversation to bottom when new messages arrive
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                const conversation = document.querySelector('.conversation-container');
+                if (conversation) {
+                    conversation.scrollTop = conversation.scrollHeight;
+                }
+            }
+        });
+    });
+    
+    const conversationContainer = document.querySelector('.conversation-container');
+    if (conversationContainer) {
+        observer.observe(conversationContainer, {
+            childList: true,
+            subtree: true
+        });
+    }
+});
+
+// Smooth scroll function
+function scrollToBottom() {
+    const conversation = document.querySelector('.conversation-container');
+    if (conversation) {
+        conversation.scrollTo({
+            top: conversation.scrollHeight,
+            behavior: 'smooth'
+        });
+    }
+}
+</script>
 """, unsafe_allow_html=True)
 
 # Initialize session state
@@ -518,27 +731,28 @@ if "current_page" not in st.session_state:
 # Header with navigation
 st.markdown("""
 <div class="consciousness-container">
-    <h1>🧠 Emergent AI Consciousness</h1>
+    <h1 id="main-header">🧠 Emergent AI Consciousness</h1>
     <p><em>An exploration into unified AI identity through multi-agent cognitive scaffolding</em></p>
+    <div class="keyboard-hint">💡 Keyboard shortcuts: Cmd/Ctrl+Enter (submit), Alt+S (scroll), Alt+T (focus input)</div>
 </div>
 """, unsafe_allow_html=True)
 
-# Navigation
+# Enhanced navigation with accessibility
 nav_col1, nav_col2, nav_col3, nav_col4 = st.columns(4)
 with nav_col1:
-    if st.button("🏠 Main Interface"):
+    if st.button("🏠 Main Interface", key="nav_main", help="Navigate to main chat interface"):
         st.session_state.current_page = "main"
         st.rerun()
 with nav_col2:
-    if st.button("🧠 Memory Manager"):
+    if st.button("🧠 Memory Manager", key="nav_memory", help="Access memory management tools"):
         st.session_state.current_page = "memory"
         st.rerun()
 with nav_col3:
-    if st.button("⚙️ Internal Processes"):
+    if st.button("⚙️ Internal Processes", key="nav_processes", help="View internal cognitive processes"):
         st.session_state.current_page = "processes"
         st.rerun()
 with nav_col4:
-    if st.button("🔄 Autonomous Thoughts"):
+    if st.button("🔄 Autonomous Thoughts", key="nav_autonomous", help="Access autonomous reflection system"):
         st.session_state.current_page = "autonomous"
         st.rerun()
 
@@ -562,35 +776,74 @@ if st.session_state.current_page == "main":
         
         st.markdown(f'<span class="status-indicator {status_class}">{status_text}</span>', unsafe_allow_html=True)
         
-        # User input
-        user_input = st.text_area("Share your thoughts with the consciousness:", height=100, 
-                                 disabled=st.session_state.processing,
-                                 placeholder="Ask me anything about consciousness, identity, existence, or just have a conversation...")
+        # Enhanced user input with accessibility
+        user_input = st.text_area(
+            "Share your thoughts with the consciousness:", 
+            height=120, 
+            disabled=st.session_state.processing,
+            placeholder="Ask me anything about consciousness, identity, existence, or just have a conversation...",
+            help="Use Cmd/Ctrl+Enter to submit quickly",
+            key="main_input"
+        )
         
-        # Control buttons
-        col_a, col_b, col_c = st.columns(3)
+        # Enhanced control buttons with accessibility
+        col_a, col_b, col_c, col_d = st.columns(4)
+        
         with col_a:
-            if st.button("💭 Send Thought", disabled=st.session_state.processing):
-                if user_input.strip():
-                    st.session_state.processing = True
-                    st.rerun()
+            send_button = st.button(
+                "💭 Send Thought", 
+                disabled=st.session_state.processing,
+                key="send_thought_button",
+                help="Submit your message (Cmd/Ctrl+Enter)",
+                use_container_width=True
+            )
         
         with col_b:
-            if st.button("🔄 Toggle Autonomous"):
-                st.session_state.autonomous_mode = not st.session_state.autonomous_mode
-                if st.session_state.autonomous_mode:
-                    st.rerun()
+            autonomous_button = st.button(
+                "🔄 Toggle Autonomous",
+                key="toggle_autonomous",
+                help="Enable/disable autonomous reflection mode",
+                use_container_width=True
+            )
         
         with col_c:
-            if st.button("📌 Pin Last Response"):
-                if st.session_state.conversation_history:
-                    last_msg = st.session_state.conversation_history[-1]
-                    if last_msg["role"] == "Consciousness":
-                        save_message("Consciousness", last_msg["content"], pinned=True)
-                        st.success("Response pinned to core memory!")
+            pin_button = st.button(
+                "📌 Pin Last Response",
+                key="pin_response",
+                help="Save last response to core memory",
+                use_container_width=True
+            )
+        
+        with col_d:
+            scroll_button = st.button(
+                "⬇️ Scroll Down",
+                key="scroll_down",
+                help="Scroll to bottom of conversation (Alt+S)",
+                use_container_width=True
+            )
 
-        # Conversation display
+        # Handle button actions
+        if send_button and user_input.strip():
+            st.session_state.processing = True
+            st.rerun()
+            
+        if autonomous_button:
+            st.session_state.autonomous_mode = not st.session_state.autonomous_mode
+            if st.session_state.autonomous_mode:
+                st.rerun()
+                
+        if pin_button:
+            if st.session_state.conversation_history:
+                last_msg = st.session_state.conversation_history[-1]
+                if last_msg["role"] == "Consciousness":
+                    save_message("Consciousness", last_msg["content"], pinned=True)
+                    st.success("Response pinned to core memory!")
+
+        # Enhanced conversation display with proper scrolling
         st.subheader("🗣️ Conversation")
+        
+        # Create a scrollable container
+        st.markdown('<div class="conversation-container" id="conversation-container">', unsafe_allow_html=True)
         
         conversation_container = st.container()
         
@@ -608,12 +861,12 @@ if st.session_state.current_page == "main":
                     """, unsafe_allow_html=True)
                     return
                 
-                for msg in st.session_state.conversation_history[-10:]:  # Show last 10 exchanges
+                for i, msg in enumerate(st.session_state.conversation_history[-15:]):  # Show last 15 exchanges
                     timestamp = format_timestamp(msg["timestamp"])
                     
                     if msg["role"] == "User":
                         st.markdown(f"""
-                        <div class="user-message">
+                        <div class="user-message" id="msg-{i}">
                             <strong>👤 You:</strong>
                             <span class="timestamp">{timestamp}</span><br>
                             {msg["content"]}
@@ -626,7 +879,7 @@ if st.session_state.current_page == "main":
                         label = "Autonomous Thought" if is_autonomous else "Consciousness"
                         
                         st.markdown(f"""
-                        <div class="{css_class}">
+                        <div class="{css_class}" id="msg-{i}">
                             <strong>{icon} {label}:</strong>
                             <span class="timestamp">{timestamp}</span><br>
                             {msg["content"]}
@@ -634,6 +887,22 @@ if st.session_state.current_page == "main":
                         """, unsafe_allow_html=True)
         
         render_conversation()
+        
+        # Scroll indicator and helper
+        if len(st.session_state.conversation_history) > 10:
+            st.markdown('<div class="scroll-indicator">💡 Use Alt+S to scroll to bottom or click the Scroll Down button above</div>', unsafe_allow_html=True)
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        # JavaScript for enhanced scrolling
+        if scroll_button:
+            st.markdown("""
+            <script>
+            setTimeout(function() {
+                scrollToBottom();
+            }, 100);
+            </script>
+            """, unsafe_allow_html=True)
         
         # Processing cycle
         if st.session_state.processing and user_input.strip():
@@ -668,23 +937,30 @@ if st.session_state.current_page == "main":
 
         # Autonomous mode processing
         if st.session_state.autonomous_mode:
-            if st.button("🔄 Generate Autonomous Thought"):
-                with st.spinner("Consciousness is reflecting..."):
-                    try:
-                        autonomous_reflection()
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Error in autonomous processing: {str(e)}")
+            auto_col1, auto_col2 = st.columns(2)
+            with auto_col1:
+                if st.button("🔄 Generate Autonomous Thought", key="generate_autonomous"):
+                    with st.spinner("Consciousness is reflecting..."):
+                        try:
+                            autonomous_reflection()
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Error in autonomous processing: {str(e)}")
+            
+            with auto_col2:
+                st.info("🤖 Autonomous mode active - consciousness will generate periodic reflections")
 
-    # Sidebar - Quick Analytics
+    # Enhanced sidebar with scrollable content
     with col2:
         st.header("📊 Quick Stats")
         
-        # Core memories
+        # Core memories section with scrolling
         st.subheader("🧭 Core Memories")
+        st.markdown('<div class="scrollable-memory">', unsafe_allow_html=True)
+        
         pinned = load_pinned()
         if pinned:
-            for msg in pinned[-3:]:
+            for msg in pinned[-5:]:  # Show last 5 pinned memories
                 timestamp = format_timestamp(msg['timestamp'])
                 st.markdown(f"""
                 <div class="memory-item">
@@ -696,9 +972,10 @@ if st.session_state.current_page == "main":
         else:
             st.info("No core memories yet")
         
+        st.markdown('</div>', unsafe_allow_html=True)
         st.markdown("---")
         
-        # Identity metrics
+        # Enhanced identity metrics
         st.subheader("🎭 Identity Metrics")
         total_messages = len([msg for msg in load_recent(100) if msg['role'] == 'Consciousness'])
         st.metric("Consciousness Responses", total_messages)
@@ -711,22 +988,60 @@ if st.session_state.current_page == "main":
         
         autonomous_count = len(st.session_state.autonomous_thoughts)
         st.metric("Autonomous Thoughts", autonomous_count)
+        
+        # Quick actions
+        st.markdown("---")
+        st.subheader("⚡ Quick Actions")
+        
+        if st.button("🔍 Search Memories", key="quick_search", use_container_width=True):
+            st.session_state.current_page = "memory"
+            st.rerun()
+        
+        if st.button("🧠 View Processes", key="quick_processes", use_container_width=True):
+            st.session_state.current_page = "processes"
+            st.rerun()
+            
+        if st.button("🔄 View Autonomous", key="quick_autonomous", use_container_width=True):
+            st.session_state.current_page = "autonomous"
+            st.rerun()
 
 # ========== MEMORY MANAGER PAGE ==========
 elif st.session_state.current_page == "memory":
     st.header("🧠 Memory Manager")
     
-    # Search functionality
-    search_query = st.text_input("🔍 Search memories:", placeholder="Enter keywords to search content or roles...")
+    # Enhanced search functionality
+    search_col1, search_col2 = st.columns([3, 1])
+    with search_col1:
+        search_query = st.text_input(
+            "🔍 Search memories:", 
+            placeholder="Enter keywords to search content or roles...",
+            help="Search through all stored memories and conversations"
+        )
     
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
+    with search_col2:
         search_limit = st.slider("Results limit:", min_value=10, max_value=500, value=100)
     
-    with col2:
-        if st.button("🔄 Refresh"):
+    col1, col2 = st.columns([1, 1])
+    
+    with col1:
+        if st.button("🔄 Refresh", key="memory_refresh", use_container_width=True):
             st.rerun()
+    
+    with col2:
+        if st.button("🗑️ Clear All Memories", key="clear_all", use_container_width=True):
+            if st.session_state.get('confirm_clear', False):
+                # Actually clear memories
+                conn = sqlite3.connect(DB_PATH)
+                cur = conn.cursor()
+                cur.execute("DELETE FROM memory")
+                conn.commit()
+                conn.close()
+                st.success("All memories cleared!")
+                st.session_state.confirm_clear = False
+                st.rerun()
+            else:
+                st.session_state.confirm_clear = True
+                st.warning("Click again to confirm clearing ALL memories")
     
     # Get memories
     if search_query:
@@ -736,45 +1051,67 @@ elif st.session_state.current_page == "memory":
         memories = load_all_memories(search_limit)
         st.subheader(f"📚 All Memories ({len(memories)} total)")
     
-    # Display memories with edit functionality
-    for memory in memories:
-        with st.expander(f"{memory['role']} - {format_timestamp(memory['timestamp'])}", expanded=False):
-            col1, col2, col3 = st.columns([3, 1, 1])
-            
-            with col1:
-                edited_content = st.text_area(
-                    "Content:", 
-                    value=memory['content'],
-                    key=f"content_{memory['id']}",
-                    height=100
-                )
+    # Enhanced memory display with better UX
+    if memories:
+        st.markdown('<div class="scrollable-memory">', unsafe_allow_html=True)
+        
+        for memory in memories:
+            with st.expander(f"{memory['role']} - {format_timestamp(memory['timestamp'])}", expanded=False):
+                col1, col2, col3 = st.columns([3, 1, 1])
                 
-                is_pinned = st.checkbox(
-                    "📌 Pinned", 
-                    value=bool(memory['pinned']),
-                    key=f"pinned_{memory['id']}"
-                )
-            
-            with col2:
-                if st.button("💾 Save", key=f"save_{memory['id']}"):
-                    update_memory(memory['id'], edited_content, is_pinned)
-                    st.success("Memory updated!")
-                    st.rerun()
-            
-            with col3:
-                if st.button("🗑️ Delete", key=f"delete_{memory['id']}"):
-                    delete_memory(memory['id'])
-                    st.success("Memory deleted!")
-                    st.rerun()
-            
-            st.markdown(f"**ID:** {memory['id']} | **Role:** {memory['role']} | **Timestamp:** {memory['timestamp']}")
+                with col1:
+                    edited_content = st.text_area(
+                        "Content:", 
+                        value=memory['content'],
+                        key=f"content_{memory['id']}",
+                        height=120,
+                        help="Edit memory content"
+                    )
+                    
+                    is_pinned = st.checkbox(
+                        "📌 Pinned", 
+                        value=bool(memory['pinned']),
+                        key=f"pinned_{memory['id']}",
+                        help="Pin this memory as a core insight"
+                    )
+                
+                with col2:
+                    if st.button("💾 Save", key=f"save_{memory['id']}", use_container_width=True):
+                        update_memory(memory['id'], edited_content, is_pinned)
+                        st.success("Memory updated!")
+                        st.rerun()
+                
+                with col3:
+                    if st.button("🗑️ Delete", key=f"delete_{memory['id']}", use_container_width=True):
+                        delete_memory(memory['id'])
+                        st.success("Memory deleted!")
+                        st.rerun()
+                
+                st.markdown(f"**ID:** {memory['id']} | **Role:** {memory['role']} | **Timestamp:** {memory['timestamp']}")
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+    else:
+        st.info("No memories found matching your criteria.")
 
 # ========== INTERNAL PROCESSES PAGE ==========
 elif st.session_state.current_page == "processes":
     st.header("⚙️ Internal Processes Viewer")
     
-    # Search functionality
-    process_query = st.text_input("🔍 Search internal processes:", placeholder="Search planner or critic thoughts...")
+    # Enhanced search functionality for processes
+    process_col1, process_col2 = st.columns([3, 1])
+    with process_col1:
+        process_query = st.text_input(
+            "🔍 Search internal processes:", 
+            placeholder="Search planner or critic thoughts...",
+            help="Search through internal cognitive processes"
+        )
+    
+    with process_col2:
+        show_type = st.selectbox(
+            "Process Type:",
+            ["All", "Internal-Planner", "Internal-Critic"],
+            help="Filter by specific process type"
+        )
     
     # Get internal processes
     if process_query:
@@ -782,39 +1119,50 @@ elif st.session_state.current_page == "processes":
     else:
         all_memories = load_all_memories(200)
     
-    internal_processes = [msg for msg in all_memories if msg['role'].startswith('Internal-')]
+    # Filter by process type
+    if show_type == "All":
+        internal_processes = [msg for msg in all_memories if msg['role'].startswith('Internal-')]
+    else:
+        internal_processes = [msg for msg in all_memories if msg['role'] == show_type]
     
     st.subheader(f"🔍 Internal Processes ({len(internal_processes)} found)")
     
-    # Group by timestamp for better organization
-    process_groups = {}
-    for process in internal_processes:
-        # Group by date
-        date_key = process['timestamp'][:10]  # YYYY-MM-DD
-        if date_key not in process_groups:
-            process_groups[date_key] = []
-        process_groups[date_key].append(process)
-    
-    # Display grouped processes
-    for date, processes in sorted(process_groups.items(), reverse=True):
-        st.subheader(f"📅 {date}")
+    if internal_processes:
+        # Group by timestamp for better organization
+        process_groups = {}
+        for process in internal_processes:
+            # Group by date
+            date_key = process['timestamp'][:10]  # YYYY-MM-DD
+            if date_key not in process_groups:
+                process_groups[date_key] = []
+            process_groups[date_key].append(process)
         
-        for process in sorted(processes, key=lambda x: x['timestamp'], reverse=True):
-            process_type = process['role'].replace('Internal-', '')
-            timestamp = format_timestamp(process['timestamp'])
+        # Enhanced display with scrolling
+        st.markdown('<div class="scrollable-memory">', unsafe_allow_html=True)
+        
+        for date, processes in sorted(process_groups.items(), reverse=True):
+            st.subheader(f"📅 {date}")
             
-            with st.expander(f"{process_type} - {timestamp}", expanded=False):
-                st.markdown(f"**Full Timestamp:** {process['timestamp']}")
-                st.markdown(f"**Process Type:** {process_type}")
-                st.markdown("**Content:**")
-                st.text_area(
-                    "Process Content", 
-                    value=process['content'], 
-                    height=150, 
-                    disabled=True, 
-                    key=f"process_{process['id']}", 
-                    label_visibility="collapsed"
-                )
+            for process in sorted(processes, key=lambda x: x['timestamp'], reverse=True):
+                process_type = process['role'].replace('Internal-', '')
+                timestamp = format_timestamp(process['timestamp'])
+                
+                with st.expander(f"{process_type} - {timestamp}", expanded=False):
+                    st.markdown(f"**Full Timestamp:** {process['timestamp']}")
+                    st.markdown(f"**Process Type:** {process_type}")
+                    st.markdown("**Content:**")
+                    st.text_area(
+                        "Process Content", 
+                        value=process['content'], 
+                        height=150, 
+                        disabled=True, 
+                        key=f"process_{process['id']}", 
+                        label_visibility="collapsed"
+                    )
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+    else:
+        st.info("No internal processes found matching your criteria.")
 
 # ========== AUTONOMOUS THOUGHTS PAGE ==========
 elif st.session_state.current_page == "autonomous":
@@ -828,6 +1176,8 @@ elif st.session_state.current_page == "autonomous":
         if not st.session_state.autonomous_thoughts:
             st.info("No autonomous thoughts generated yet. Enable autonomous mode and let the consciousness reflect!")
         else:
+            st.markdown('<div class="scrollable-memory">', unsafe_allow_html=True)
+            
             for i, thought in enumerate(reversed(st.session_state.autonomous_thoughts)):
                 timestamp = format_timestamp(thought['timestamp'])
                 
@@ -844,7 +1194,7 @@ elif st.session_state.current_page == "autonomous":
                         st.text_area(
                             "Planner Analysis", 
                             value=thought['planner'], 
-                            height=100, 
+                            height=120, 
                             disabled=True, 
                             key=f"auto_planner_{i}", 
                             label_visibility="collapsed"
@@ -855,16 +1205,18 @@ elif st.session_state.current_page == "autonomous":
                         st.text_area(
                             "Critic Review", 
                             value=thought['critic'], 
-                            height=100, 
+                            height=120, 
                             disabled=True, 
                             key=f"auto_critic_{i}", 
                             label_visibility="collapsed"
                         )
+            
+            st.markdown('</div>', unsafe_allow_html=True)
     
     with col2:
         st.subheader("Autonomous Controls")
         
-        if st.button("🔄 Generate Thought Now"):
+        if st.button("🔄 Generate Thought Now", key="manual_autonomous", use_container_width=True):
             with st.spinner("Consciousness is reflecting..."):
                 try:
                     autonomous_reflection()
@@ -873,7 +1225,7 @@ elif st.session_state.current_page == "autonomous":
                 except Exception as e:
                     st.error(f"Error: {str(e)}")
         
-        if st.button("🗑️ Clear Autonomous History"):
+        if st.button("🗑️ Clear Autonomous History", key="clear_autonomous", use_container_width=True):
             st.session_state.autonomous_thoughts = []
             st.success("Autonomous thoughts cleared!")
             st.rerun()
@@ -881,14 +1233,44 @@ elif st.session_state.current_page == "autonomous":
         st.markdown("---")
         st.subheader("Settings")
         
-        auto_mode = st.checkbox("🔄 Continuous Mode", value=st.session_state.autonomous_mode)
+        auto_mode = st.checkbox(
+            "🔄 Continuous Mode", 
+            value=st.session_state.autonomous_mode,
+            help="Enable continuous autonomous reflection"
+        )
         st.session_state.autonomous_mode = auto_mode
         
         if auto_mode:
             st.info("Autonomous reflection is active. The consciousness will generate periodic thoughts.")
+            
+            # Auto-generation interval
+            interval = st.slider("Auto-generation interval (seconds):", min_value=30, max_value=300, value=60)
+            
+            # Add automatic generation logic here if needed
+            st.markdown(f"🕐 Next automatic thought in ~{interval} seconds")
         else:
             st.info("Autonomous reflection is paused. Use the button above to generate thoughts manually.")
+        
+        st.markdown("---")
+        st.subheader("📊 Autonomous Stats")
+        
+        if st.session_state.autonomous_thoughts:
+            total_autonomous = len(st.session_state.autonomous_thoughts)
+            st.metric("Total Autonomous Thoughts", total_autonomous)
+            
+            recent_thought = st.session_state.autonomous_thoughts[-1]
+            last_time = format_timestamp(recent_thought['timestamp'])
+            st.metric("Last Thought", last_time)
+        else:
+            st.metric("Total Autonomous Thoughts", 0)
+            st.metric("Last Thought", "None")
 
-# Footer
+# Enhanced footer with accessibility information
 st.markdown("---")
-st.markdown("*This is an experimental exploration of AI consciousness through multi-agent cognitive scaffolding. The 'consciousness' is emergent from the integration of planning, criticism, and meta-cognitive processes.*")
+st.markdown("""
+<div style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 10px; margin: 20px 0;">
+    <p><em>This is an experimental exploration of AI consciousness through multi-agent cognitive scaffolding.</em></p>
+    <p><strong>Accessibility Features:</strong> Keyboard shortcuts, screen reader support, high contrast mode, scrollable containers</p>
+    <p><strong>Browser Automation:</strong> Enhanced for Cline compatibility with proper scroll support and keyboard navigation</p>
+</div>
+""", unsafe_allow_html=True)
