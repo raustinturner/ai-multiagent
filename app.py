@@ -8,6 +8,7 @@ import time
 import requests
 from bs4 import BeautifulSoup
 from ddgs import DDGS
+from enhanced_web_fetcher import create_enhanced_fetcher, robust_fetch_url_content, robust_web_search
 
 from langgraph.graph import StateGraph, END, START
 from langchain_openai import ChatOpenAI
@@ -105,44 +106,14 @@ def load_all_memories(limit: int = 1000) -> List[Dict]:
 
 # ========== WEB SEARCH FUNCTIONS ==========
 def search_web(query: str, max_results: int = 3) -> str:
-    """Search the web using DuckDuckGo and return formatted results"""
-    try:
-        with DDGS() as ddgs:
-            results = []
-            for result in ddgs.text(query, max_results=max_results):
-                results.append(f"**{result['title']}**\n{result['body']}\nSource: {result['href']}")
-            return "\n\n".join(results) if results else "No search results found."
-    except Exception as e:
-        return f"Web search failed: {str(e)}"
+    """Search the web using enhanced robust search with fallbacks"""
+    github_token = os.getenv('GITHUB_TOKEN')
+    return robust_web_search(query, max_results, github_token)
 
 def fetch_url_content(url: str) -> str:
-    """Fetch and extract text content from a URL"""
-    try:
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        }
-        response = requests.get(url, headers=headers, timeout=10)
-        response.raise_for_status()
-        
-        soup = BeautifulSoup(response.content, 'html.parser')
-        
-        # Remove script and style elements
-        for script in soup(["script", "style"]):
-            script.decompose()
-        
-        # Extract text
-        text = soup.get_text()
-        
-        # Clean up whitespace
-        lines = (line.strip() for line in text.splitlines())
-        chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
-        text = ' '.join(chunk for chunk in chunks if chunk)
-        
-        # Truncate to reasonable length
-        return text[:2000] + "..." if len(text) > 2000 else text
-    
-    except Exception as e:
-        return f"Failed to fetch URL content: {str(e)}"
+    """Fetch and extract text content from a URL using enhanced fetcher"""
+    github_token = os.getenv('GITHUB_TOKEN')
+    return robust_fetch_url_content(url, github_token)
 
 def get_current_date_time() -> str:
     """Get current date and time information"""
