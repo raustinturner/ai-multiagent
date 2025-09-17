@@ -5,6 +5,9 @@ from typing import List, Dict, Any
 from dotenv import load_dotenv
 import os
 import time
+import requests
+from bs4 import BeautifulSoup
+from duckduckgo_search import DDGS
 
 from langgraph.graph import StateGraph, END, START
 from langchain_openai import ChatOpenAI
@@ -100,12 +103,59 @@ def load_all_memories(limit: int = 1000) -> List[Dict]:
     conn.close()
     return [{"id": r[0], "timestamp": r[1], "role": r[2], "content": r[3], "pinned": r[4]} for r in rows]
 
+# ========== WEB SEARCH FUNCTIONS ==========
+def search_web(query: str, max_results: int = 3) -> str:
+    """Search the web using DuckDuckGo and return formatted results"""
+    try:
+        with DDGS() as ddgs:
+            results = []
+            for result in ddgs.text(query, max_results=max_results):
+                results.append(f"**{result['title']}**\n{result['body']}\nSource: {result['href']}")
+            return "\n\n".join(results) if results else "No search results found."
+    except Exception as e:
+        return f"Web search failed: {str(e)}"
+
+def fetch_url_content(url: str) -> str:
+    """Fetch and extract text content from a URL"""
+    try:
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+        
+        soup = BeautifulSoup(response.content, 'html.parser')
+        
+        # Remove script and style elements
+        for script in soup(["script", "style"]):
+            script.decompose()
+        
+        # Extract text
+        text = soup.get_text()
+        
+        # Clean up whitespace
+        lines = (line.strip() for line in text.splitlines())
+        chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+        text = ' '.join(chunk for chunk in chunks if chunk)
+        
+        # Truncate to reasonable length
+        return text[:2000] + "..." if len(text) > 2000 else text
+    
+    except Exception as e:
+        return f"Failed to fetch URL content: {str(e)}"
+
+def get_current_date_time() -> str:
+    """Get current date and time information"""
+    now = datetime.now(timezone.utc)
+    return f"Current UTC date/time: {now.strftime('%Y-%m-%d %H:%M:%S UTC')} ({now.strftime('%A, %B %d, %Y')})"
+
 def get_conversation_context() -> str:
     """Get relevant context for the conversation"""
     recent = load_recent(10)
     pinned = load_pinned()
     
-    context = ""
+    context = f"CURRENT CONTEXT:\n{get_current_date_time()}\n\n"
+    
     if pinned:
         context += "CORE MEMORIES (Pinned Insights):\n"
         for msg in pinned[-5:]:
@@ -118,6 +168,27 @@ def get_conversation_context() -> str:
             context += f"{msg['role']}: {msg['content']}\n"
     
     return context
+
+def determine_if_web_search_needed(user_input: str) -> tuple[bool, str]:
+    """Determine if web search is needed and what to search for"""
+    # Keywords that suggest current information is needed
+    current_keywords = [
+        "today", "now", "current", "latest", "recent", "new", "2024", "2025", 
+        "what's happening", "news", "update", "currently", "at the moment",
+        "this year", "this month", "this week", "happening now"
+    ]
+    
+    # Check if the input contains current information requests
+    user_lower = user_input.lower()
+    if any(keyword in user_lower for keyword in current_keywords):
+        return True, user_input
+    
+    # Check for specific domains that might need current info
+    info_domains = ["weather", "stock", "price", "news", "event", "happened", "occurring"]
+    if any(domain in user_lower for domain in info_domains):
+        return True, user_input
+    
+    return False, ""
 
 # ========== UNIFIED AGENT SYSTEM ==========
 def internal_planner_process(user_input: str, conversation_context: str) -> str:
@@ -183,8 +254,22 @@ Respond as the unified consciousness having this conversation:"""
     return resp.content.strip()
 
 def consciousness_cycle(user_input: str) -> Dict[str, str]:
-    """Complete cycle of consciousness processing"""
+    """Complete cycle of consciousness processing with web search capability"""
     context = get_conversation_context()
+    web_results = ""
+    
+    # Check if web search is needed for current information
+    needs_search, search_query = determine_if_web_search_needed(user_input)
+    if needs_search:
+        try:
+            web_results = search_web(search_query, max_results=3)
+            save_message("Web-Search", f"Query: {search_query}\nResults: {web_results}")
+        except Exception as e:
+            web_results = f"Web search encountered an error: {str(e)}"
+    
+    # Add web search results to context if available
+    if web_results:
+        context += f"\nWEB SEARCH RESULTS:\n{web_results}\n"
     
     # Internal cognitive processes (not shown to user by default)
     planner_thoughts = internal_planner_process(user_input, context)
@@ -200,7 +285,8 @@ def consciousness_cycle(user_input: str) -> Dict[str, str]:
     return {
         "planner": planner_thoughts,
         "critic": critic_thoughts,
-        "response": unified_response
+        "response": unified_response,
+        "web_search": web_results if web_results else None
     }
 
 def autonomous_reflection():
@@ -619,7 +705,14 @@ elif st.session_state.current_page == "processes":
                 st.markdown(f"**Full Timestamp:** {process['timestamp']}")
                 st.markdown(f"**Process Type:** {process_type}")
                 st.markdown("**Content:**")
-                st.text_area("", value=process['content'], height=150, disabled=True, key=f"process_{process['id']}")
+                st.text_area(
+                    "Process Content", 
+                    value=process['content'], 
+                    height=150, 
+                    disabled=True, 
+                    key=f"process_{process['id']}", 
+                    label_visibility="collapsed"
+                )
 
 # ========== AUTONOMOUS THOUGHTS PAGE ==========
 elif st.session_state.current_page == "autonomous":
@@ -646,11 +739,25 @@ elif st.session_state.current_page == "autonomous":
                     col_a, col_b = st.columns(2)
                     with col_a:
                         st.markdown("**📋 Planner Analysis:**")
-                        st.text_area("", value=thought['planner'], height=100, disabled=True, key=f"auto_planner_{i}")
+                        st.text_area(
+                            "Planner Analysis", 
+                            value=thought['planner'], 
+                            height=100, 
+                            disabled=True, 
+                            key=f"auto_planner_{i}", 
+                            label_visibility="collapsed"
+                        )
                     
                     with col_b:
                         st.markdown("**🔍 Critic Review:**")
-                        st.text_area("", value=thought['critic'], height=100, disabled=True, key=f"auto_critic_{i}")
+                        st.text_area(
+                            "Critic Review", 
+                            value=thought['critic'], 
+                            height=100, 
+                            disabled=True, 
+                            key=f"auto_critic_{i}", 
+                            label_visibility="collapsed"
+                        )
     
     with col2:
         st.subheader("Autonomous Controls")
